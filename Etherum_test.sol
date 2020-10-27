@@ -40,5 +40,17 @@ contract BilBoydDealership {
     function getCoice() public view returns (vehicle_choices) {
         return choice;
     }
+    
+    // Define a modifier for a function that only the buyer can call
+    modifier onlyBuyer() {
+    require( msg.sender == buyer , "Only buyer can call this.");
+     _;
+    }
+
+    // Define a modifier for a function that only the seller can call
+    modifier onlySeller() {
+    require( msg.sender == seller , "Only seller can call this.");
+    _;
+}
   
 }
