@@ -92,9 +92,29 @@ contract BilBoydDealership {
         require( state == _state , "Invalid state.");
         _;
     }
-        
-        
-        
+    
+    /*
+    modifier ifClient() {
+        if(client != msg.sender) {
+            assert(false);
+        }
+    }
+    
+    function depositFunds() payable public {
+        UpdateStatus('User transferred some money', msg.value);
+    }
+    
+function withdrawFunds(unit amount) ifClient public 
+        UpdateStatus('User transferred some money', 0);
+        if(client.send(amount) || client.balance > amount){
+            _switch = true;
+        }
+        else if(client.balance < amount){
+            assert(false);
+            _switch = false;
+        }
+    }
+    */
         
         
     function abort() public onlySeller inState(State.Created)
