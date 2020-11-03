@@ -1,16 +1,17 @@
 pragma solidity >=0.4.10 <0.8.0;
 
-
+//TODO: HUSKER Å LEGGE TIL ONLYBUYER
 
 contract BilBoydDealership {
       
     //Define variables
-    uint public value; 
+    uint weeklyPrice; 
     address payable public seller; // seller
     address payable public buyer; // buyer 
     enum State { Created, SetBuyer, Locked, Release, Inactive}
     State public state;
     Car[] cars;
+    uint milagecap;
     
     //Define customer variables
     Car buyerCar;
@@ -28,29 +29,19 @@ contract BilBoydDealership {
     struct Car {
         string name;
         uint price;
-        string milageCap;
-    }
-   
-     //Define MilageCap struct
-    struct milageCap {
-        string low;
-        string medium;
-        string high;
     }
     
-    milageCap _milageCap = milageCap("low", "medium", "high");
-    Car Mini = Car("Mini",1000000000000000000, _milageCap.low); 
-    Car SUV = Car("SUV",1000000000000000000, _milageCap.medium);
-    Car Pickup = Car("Pickup",1000000000000000000, _milageCap.medium);
+    Car Mini = Car("Mini",1000000000000000000); 
+    Car SUV = Car("SUV",1000000000000000000);
+    Car Pickup = Car("Pickup",1000000000000000000);
     
     
-    constructor(address payable _buyer) public payable {
+    constructor() public payable {
         cars.push(Mini);
         cars.push(SUV);
         cars.push(Pickup);
         seller = msg.sender;
-        value = msg.value;
-        buyer = _buyer;
+        weeklyPrice = msg.value;
     }
     
     
@@ -99,36 +90,29 @@ contract BilBoydDealership {
         state = State.SetBuyer;
     }
     
-    function confirmPurchase() public inState(State.SetBuyer)  payable {
+    function confirmPurchase(uint finalPrice) public inState(State.SetBuyer)  payable {
         //Husk på depositum  - condition(msg.value * 2 == value)
-        emit PurchaseConfirmed();
-        //buyer = msg.sender;
-        state = State.Locked;
+        if(finalPrice == weeklyPrice) {
+            emit PurchaseConfirmed();
+            //buyer = msg.sender;
+             state = State.Locked;
+        }
+        
     }
 
     function confirmReceived() public onlyBuyer inState(State.Locked) {
         emit ItemReceived();
         state = State.Release;
-        buyer.transfer(value);
+        buyer.transfer(weeklyPrice);
     }
 
     function refundSeller() public onlySeller inState(State.Release) {
         emit SellerRefunded();
         state = State.Inactive;
-        seller.transfer(3 * value);
+        seller.transfer(3 * weeklyPrice);
     }
     
-    function getVehicleChoices() public view returns(string memory){
-        
-        string memory choice;
-        for(uint i=0; i < cars.length; i++){
-            choice = string(abi.encodePacked(cars[i].name,", ",choice));
-        }
 
-        return choice;
-    }
-
-    //This is not orange... wont return any data if orange
     function setVehicleChoice(string memory car) public returns(string memory) {
         for(uint i = 0; i < cars.length; i++){
             if((keccak256(abi.encodePacked((cars[i].name))) == keccak256(abi.encodePacked((car))))) {
@@ -139,20 +123,91 @@ contract BilBoydDealership {
         }
         return "The vehicle does not exist";
     }
-
     
+    function setMilageCap(uint _milagecap) public onlyBuyer returns(string memory) {
+        if (_milagecap < 300) {
+            return "This is too low";
+        } else if(_milagecap > 500) {
+            return "The milage cap is too high";
+        } else {
+            milagecap = _milagecap;
+        }
+    }
+    
+    //Contract sets the weekly rent
+    function calulateWeeklyPrice() public {
+        weeklyPrice = calulateRentalPrice(buyerCar.price, milagecap);
+    }
+    
+   
+    
+   
+    /* Define actions that will not be executed on the blockchain, only return data
+    @notice Color of buttons are blue
+    */
+
+     function getVehicleChoices() public view returns(string memory){
+        
+        string memory choice;
+        for(uint i=0; i < cars.length; i++){
+            choice = string(abi.encodePacked(cars[i].name,", ",choice));
+        }
+
+        return choice;
+    }
+    
+     function getMilageCap() public view returns(string memory) {
+        if( milagecap > 0){
+            return uint2str(milagecap);
+        } else {
+            return "The milage cap must be between 300km and 500km";
+        }
+    }
     
     function getCurrentVehicle() public view returns(string memory){
 
         return string(abi.encodePacked(buyerCar.name));
     }
     
-    function setValue(string memory car) public {
-        
+    //Shows to the user the total weekly rent
+    function getWeeklyPrice() public view returns (uint) {
+        return weeklyPrice;
     }
     
-    function getValue() public view returns (uint) {
-        return value;
+    
+    
+    
+    
+    
+    
+    
+    /* HELPER FUNCTIONS */
+    
+    //Price for weekly rent
+    function calulateRentalPrice(uint basePrice, uint _milagecap) public returns(uint weeklyRent){
+        uint extraPrice = (_milagecap - 300) * 26000000000000;
+        uint finalPrice = basePrice + extraPrice;
+        return finalPrice;
     }
+    
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+    if (_i == 0) {
+        return "0";
+    }
+    uint j = _i;
+    uint len;
+    while (j != 0) {
+        len++;
+        j /= 10;
+    }
+    bytes memory bstr = new bytes(len);
+    uint k = len - 1;
+    while (_i != 0) {
+        bstr[k--] = byte(uint8(48 + _i % 10));
+        _i /= 10;
+    }
+    return string(bstr);
+}
        
 }
+
