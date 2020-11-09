@@ -243,6 +243,7 @@ contract BilBoydDealership {
     
     function newContract() public onlyBuyer inState(State.EndOptions) {
         loyaltyYears = loyaltyYears + 1;
+        experience= experience +1;
         state = State.SetBuyer;
         resetChoices();
         
