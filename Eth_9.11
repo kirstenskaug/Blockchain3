@@ -226,6 +226,7 @@ contract BilBoydDealership {
         //Recompute weekly price
         //Setstate to active with the new price
         loyaltyYears = loyaltyYears + 1;
+        experience= experience +1;
         constractStart = getNow();
         weeklyPrice = calulateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
         state = State.Active;
