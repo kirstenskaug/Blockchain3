@@ -20,14 +20,20 @@ Once initialized you can choose which car you want to lease
 
 
 contract BilBoydDealership {
-      
-    //Define variables
-    uint public weeklyPrice; 
-    address payable public seller; // seller
-    address payable public buyer; // buyer 
+
+    /* ----------------------------------------
+    Define variables used in the contract*
+    ------------------------------------------*/
+    
+    address payable public seller; 
+    address payable public buyer; 
+    
     enum State { Created, SetBuyer, Locked, Active, EndOptions, Inactive}
     State public state;
+    
     Car[] cars;
+    Car buyerCar;
+    
     uint public milagecap;
     uint public experience;
     uint public duration;
@@ -35,9 +41,7 @@ contract BilBoydDealership {
     uint public sellerDeposit;
     uint public constractStart;
     uint public loyaltyYears = 0;
-    
-    //Define customer variables
-    Car buyerCar;
+    uint public weeklyPrice;
     
     //Define events
     event PurchaseConfirmed();
@@ -46,19 +50,23 @@ contract BilBoydDealership {
     event SellerRefunded();
     event SetBuyer();
     
-    
-     //Define Car struct
-    
+    //Data structure describing a Car obect
     struct Car {
         string name;
         uint price;
         uint buyPrice;
     }
     
+    //Initializing cars
     Car Mini = Car("Mini",100,15000); 
     Car SUV = Car("SUV",200,20000);
     Car Pickup = Car("Pickup",300,30000);
     
+    
+     /*---------------------------------------
+    Define constructor
+    @info the constructors makes sure that the seller invests a deposit un the contract to protect the buyer if the seller is insolvant
+    ----------------------------------------*/
     
     constructor() public payable {
         sellerDeposit = dollar2wei(250);
@@ -71,12 +79,11 @@ contract BilBoydDealership {
     }
     
     
-    /* 
+    /*----------------------------------------
     Define modifiers for access control.
     These are used to restrict access to methods in the contract
-    */
-    
-    
+    ------------------------------------------*/
+      
     
     modifier condition(bool _condition) {
         require(_condition);
@@ -101,25 +108,34 @@ contract BilBoydDealership {
     }
     
 
-    
-    
-    /* 
+    /*----------------------------------------
     Define actions that that can be executed on the contract, which will be written to the blockchain
     @notice Color of buttons are orange
-    */
+    ------------------------------------------*/
     
+
+    /*
+    * Allows the seller to abort the contract while it's being created
+    */
     function abort() public onlySeller inState(State.Created) {
         emit Aborted();
         state = State.Inactive;
         seller.transfer(address(this).balance);
     }
     
+    /*
+    * Initilalizes the contrac, which locks the buyer address to the person initializing the contract
+    */
     function initialiseContract() public inState(State.Created) {
         emit SetBuyer();
         buyer = msg.sender;
         state = State.SetBuyer;
     }
     
+     /*
+    * When the buyer has finished setting the values for the rental (setMilageCap, setExperience, setContractDuration, setVehicleChoice),
+    * this method is used to lock a deposit and the weeklyPrice*2 into the contract. The contract is then started and transitioned into the Active state.
+    */
     function confirmInitialPurchase() public inState(State.SetBuyer)  payable {
         //Husk på depositum  - condition(msg.value * 2 == value)
         uint price = 2*weeklyPrice;
