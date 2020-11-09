@@ -147,6 +147,11 @@ contract BilBoydDealership {
         }
     }
     
+     /*
+    * After the initial signing of the contract is done, the buy can transfer money every week with this method by sending a value that is
+    * equal to the value of weeklyPrice. The money is directly transferred to the sellers account. 
+    * The method also checks wheter the contract will expire in the next week and transitions the contract into the Endoptions state if it is the case.
+    */
     //This method is used by the buyer to make manual payments to the seller every week while the contract is active.
     function confirmWeeklyPurchase() public inState(State.Active) payable {
         require(msg.value == weeklyPrice, "You should pay the full weekly amount for the rent");
@@ -420,10 +425,6 @@ contract BilBoydDealership {
         experience = 0;
         milagecap = 0;
         duration = 0;
-        weeklyPrice=0;
-        sellerDeposit=0;
-        deposit=0;
-        buyerCar.name="Not car selected";
     }
     
    
