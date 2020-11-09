@@ -208,7 +208,7 @@ contract BilBoydDealership {
     
     //Contract sets the weekly rent
     function calulateWeeklyPrice() public {
-        weeklyPrice = calulateRentalPrice(experience, buyerCar.price, milagecap, duration,1);
+        weeklyPrice = calulateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
     }
     
     
