@@ -264,7 +264,6 @@ contract BilBoydDealership {
     
     function newContract() public onlyBuyer inState(State.EndOptions) {
         loyaltyYears = loyaltyYears + 1;
-        experience= experience +1;
         state = State.SetBuyer;
         resetChoices();
         
@@ -425,6 +424,10 @@ contract BilBoydDealership {
         experience = 0;
         milagecap = 0;
         duration = 0;
+        weeklyPrice=0;
+        sellerDeposit=0;
+        deposit=0;
+        buyerCar.name="Not car selected";
     }
     
    
