@@ -42,6 +42,7 @@ contract BilBoydDealership {
     uint public constractStart;
     uint public loyaltyYears = 0;
     uint public weeklyPrice;
+    uint public numberOfPayments=0;
     
     //Define events
     event PurchaseConfirmed();
@@ -160,6 +161,7 @@ contract BilBoydDealership {
         uint constractDurationSeconds = duration*70;
         uint contractEnd = constractStart + constractDurationSeconds;
         uint weekSeconds = 604800;
+        numberOfPayments = numberOfPayments+ 1;
         //should be "< weekSeconds" instead of "< 40"
         int a = int(contractEnd);
         if(int(contractEnd)-int(getNow()) < 40) {
@@ -167,14 +169,24 @@ contract BilBoydDealership {
             }
         }
 
-    /*
+  
     //This method will be called when buyer does not pay for a set amount of weeks. 
     // The seller then gets the deposit and the contract is terminated 
-    function abortContract() public inState(State.Active) payable {
-        seller.transfer(address(this).balance); //the deposit
-        state = State.Inactive;
+    function abortContract() public onlySeller inState(State.Active) payable {
+        //calculate the numb of payments that should have been transferred
+       
+        uint weekSeconds = 604800;
+        //uint numWeeks= (getNow()-constractStart)/604800; //dette blir ikke riktig
+        uint numWeeks= 4;
+        uint diffWeeks=  numWeeks - numberOfPayments;
+        
+        if ( diffWeeks >2 ){    
+            //When buyer has missed two or more payments, the seller can take the deposit and terminate the contract
+            seller.transfer(address(this).balance); //the deposit
+            state = State.Inactive;
+            
+        }
     }
-    */
     
     
     function confirmReceived() public onlyBuyer inState(State.Locked) {
