@@ -178,18 +178,15 @@ contract BilBoydDealership {
     */ 
     function abortContract() public onlySeller inState(State.Active) payable {
         //calculate the numb of payments that should have been transferred
-       
-        uint weekSeconds = 604800;
-        //uint numWeeks= (getNow()-contractStart)/604800; //dette blir ikke riktig
-        uint numWeeks= 4;
-        uint diffWeeks=  numWeeks - numberOfPayments;
-        
-        if ( diffWeeks >2 ){    
-            //When buyer has missed two or more payments, the seller can take the deposit and terminate the contract
+        uint paymentSec = numberOfPayments * 604800;
+        uint secondsElapsed = getNow() - contractStart;
+        uint diff = secondsElapsed-paymentSec; 
+        if (diff > 60) { //denne skal være 604800 * 4 - altså fire uker (i sekunder)
+            //When buyer has missed four or more payments, the seller can take the deposit and terminate the contract
             seller.transfer(address(this).balance); //the deposit
             state = State.Inactive;
-            
         }
+       
     }
     
     
