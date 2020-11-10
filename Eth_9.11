@@ -23,7 +23,7 @@ Once initialized you can choose which car you want to lease
 contract BilBoydDealership {
 
     /* ----------------------------------------
-    Define variables used in the contract*
+    Define variables used in the contract* 
     ------------------------------------------*/
     
     address payable public seller; 
@@ -35,12 +35,13 @@ contract BilBoydDealership {
     Car[] cars;
     Car buyerCar;
     
+    //Variables
     uint public milagecap;
     uint public experience;
     uint public duration;
     uint public deposit;
     uint public sellerDeposit;
-    uint public constractStart;
+    uint public contractStart;
     uint public loyaltyYears = 0;
     uint public weeklyPrice;
     uint public numberOfPayments=0;
@@ -117,7 +118,8 @@ contract BilBoydDealership {
     
 
     /*
-    * Allows the seller to abort the contract while it's being created
+    * Allows the seller to abort the contract while it's being created, before a buyer initializes the contract. 
+    * Insures that the seller can collect its deposit if the buyer doesn't want the contract anyway.
     */
     function abort() public onlySeller inState(State.Created) {
         emit Aborted();
@@ -126,7 +128,8 @@ contract BilBoydDealership {
     }
     
     /*
-    * Initilalizes the contrac, which locks the buyer address to the person initializing the contract
+    * Initilalizes the contract, which locks the buyer address to the person initializing the contract
+    * After this no one else can change variables on the contract exept the buyer (and seller on its specific functions) 
     */
     function initialiseContract() public inState(State.Created) {
         emit SetBuyer();
@@ -143,24 +146,23 @@ contract BilBoydDealership {
         uint price = 2*weeklyPrice;
         if(msg.value == deposit+price) {
              emit PurchaseConfirmed();
-             constractStart = getNow();
+             contractStart = getNow();
              //deposit = 0;
              state = State.Locked;
         }
     }
     
      /*
-    * After the initial signing of the contract is done, the buy can transfer money every week with this method by sending a value that is
+    * After the initial signing of the contract is done, the buyer can transfer money every week with this method by sending a value that is
     * equal to the value of weeklyPrice. The money is directly transferred to the sellers account. 
-    * The method also checks wheter the contract will expire in the next week and transitions the contract into the Endoptions state if it is the case.
+    * The method also checks whether the contract will expire in the next week and transitions the contract into the Endoptions state if that is the case.
     */
-    //This method is used by the buyer to make manual payments to the seller every week while the contract is active.
     function confirmWeeklyPurchase() public inState(State.Active) payable {
         require(msg.value == weeklyPrice, "You should pay the full weekly amount for the rent");
         seller.transfer(weeklyPrice);
         //should multiply by 31556926 seconds (1 year). Is set to 1 min for testing purposes.
-        uint constractDurationSeconds = duration*70;
-        uint contractEnd = constractStart + constractDurationSeconds;
+        uint contractDurationSeconds = duration*70;
+        uint contractEnd = contractStart + contractDurationSeconds;
         uint weekSeconds = 604800;
         numberOfPayments = numberOfPayments+ 1;
         //should be "< weekSeconds" instead of "< 40"
@@ -171,13 +173,15 @@ contract BilBoydDealership {
         }
 
   
-    //This method will be called when buyer does not pay for a set amount of weeks. 
-    // The seller then gets the deposit and the contract is terminated 
+    /*
+    * This method will be called when buyer does not pay for a set amount of weeks (here 4). 
+    * The seller then gets the deposit and the contract is terminated 
+    */ 
     function abortContract() public onlySeller inState(State.Active) payable {
         //calculate the numb of payments that should have been transferred
        
         uint weekSeconds = 604800;
-        //uint numWeeks= (getNow()-constractStart)/604800; //dette blir ikke riktig
+        //uint numWeeks= (getNow()-contractStart)/604800; //dette blir ikke riktig
         uint numWeeks= 4;
         uint diffWeeks=  numWeeks - numberOfPayments;
         
@@ -190,12 +194,22 @@ contract BilBoydDealership {
     }
     
     
+    /*
+    * This method is for the buyer to click to confirm that they have received the car. 
+    * The buyer then receives the extra weeklyPrice value he/she payed during initializing 
+    * to ensure a safe transfer and agreement of contract. 
+    */
     function confirmReceived() public onlyBuyer inState(State.Locked) {
         emit ItemReceived();
         state = State.Active;
         buyer.transfer(weeklyPrice);
     }
 
+
+    /*
+    * This method is used to refund the Seller its deposit for the initialization of the contract 
+    * as well as transferring the first weekly payment of the buyer to the seller. 
+    */
     function refundSeller() public onlySeller inState(State.Active) {
         emit SellerRefunded();
         require(address(this).balance - deposit > 0, "The weekly payment has not yet been paid by the buyer");
@@ -208,7 +222,7 @@ contract BilBoydDealership {
 
     }
     
-
+    // The buyer can choose which vehicle it wants to rent. 
     function setVehicleChoice(string memory car) public returns(string memory) {
         for(uint i = 0; i < cars.length; i++){
             if((keccak256(abi.encodePacked((cars[i].name))) == keccak256(abi.encodePacked((car))))) {
@@ -220,6 +234,7 @@ contract BilBoydDealership {
         return "The vehicle does not exist";
     }
     
+    // The buyer chooses the milage he/she wants to have, between 300 and 500 km
     function setMilageCap(uint _milagecap) public returns(string memory) {
         if (_milagecap < 300) {
             return "This is too low";
@@ -230,10 +245,17 @@ contract BilBoydDealership {
         }
     }
     
+    /* 
+    * The buyer enters his/her driving experience in years. The number of years driven affects the renting price. 
+    * If the buyer is inexperienced (has driven less than 5 years) there is an extra fee that works as insurance on the car. 
+    */
     function setExperience(uint _experience) public returns(string memory) {
         experience = _experience;
     }
     
+    /*
+    * The buyer sets the amount of years he/she wants the contract to be (how long they will rent the car)
+    */
     function setContractDuration(uint _duration) public returns(string memory) {
         require(_duration > 0, "Duration must be between 1 and 3 years.");
         require(_duration < 4, "Duration must be between 1 and 3 years.");
@@ -241,28 +263,35 @@ contract BilBoydDealership {
     }
     
     //Contract sets the weekly rent
-    function calulateWeeklyPrice() public {
-        weeklyPrice = calulateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
+    function calculateWeeklyPrice() public {
+        weeklyPrice = calculateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
     }
     
     
-    /* Methods that the buyer can call after th econtract has expired 
+    /* Methods that the buyer can call after the contract has expired 
     @notice These methods will only be active after a contract has expired.
     */
     
+    /*
+    * If the buyer wants to terminate the contract after it has expired, they can click this button. 
+    */
     function terminateContract() public onlyBuyer inState(State.EndOptions) {
         buyer.transfer(deposit);
         deposit = 0;
         state = State.Inactive;
     }
     
+    /*
+    * If the buyer wants to extend the contract with the same car, he/she can click this button. 
+    * 
+    */
     function extendContract() public onlyBuyer inState(State.EndOptions) {
         //Recompute weekly price
         //Setstate to active with the new price
         loyaltyYears = loyaltyYears + 1;
         experience= experience +1;
-        constractStart = getNow();
-        weeklyPrice = calulateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
+        contractStart = getNow();
+        weeklyPrice = calculateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
         state = State.Active;
     }
     
@@ -273,8 +302,8 @@ contract BilBoydDealership {
         state = State.Inactive;
         
     } 
-    // decrease value of car after years of use
     
+    // decrease value of car after years of use
     function newContract() public onlyBuyer inState(State.EndOptions) {
         loyaltyYears = loyaltyYears + 1;
         state = State.SetBuyer;
@@ -339,7 +368,7 @@ contract BilBoydDealership {
          return address(this).balance;
      }
     
-    function getBuyPriceFroCurrentVehicle() public view returns(uint) {
+    function getBuyPriceForCurrentVehicle() public view returns(uint) {
         return buyerCar.buyPrice;
     }
     
@@ -363,12 +392,12 @@ contract BilBoydDealership {
         duration = 1;
         milagecap = 300;
         buyerCar = cars[1];
-        weeklyPrice = calulateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
+        weeklyPrice = calculateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
       
     }
     
     //Price for weekly rent
-    function calulateRentalPrice(uint _experience, uint basePrice, uint _milagecap, uint _duration, uint loyaltyYears) private returns(uint finalPrice){
+    function calculateRentalPrice(uint _experience, uint basePrice, uint _milagecap, uint _duration, uint loyaltyYears) private returns(uint finalPrice){
         uint extraPrice = (_milagecap - 300);
         uint finalPrice = basePrice + extraPrice;
         
@@ -400,7 +429,7 @@ contract BilBoydDealership {
         
         return finalPrice;
     }
-    
+ 
     function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
         if (_i == 0) {
             return "0";
@@ -421,18 +450,17 @@ contract BilBoydDealership {
         
         return string(bstr);
     }
-     
+    
     function dollar2wei(uint _i) internal pure returns (uint){
         return _i*26000000000000000;
     } 
     
     //Function to set the state if state suddenly needs change during testing
-    
     function setState(uint input) public returns (uint){
         state = State(input);
     } 
     
-     
+    
     function resetChoices() internal {
         experience = 0;
         milagecap = 0;
