@@ -282,7 +282,7 @@ contract BilBoydDealership {
     
     /*
     * If the buyer wants to extend the contract with the same car, he/she can click this button. 
-    * 
+    * This function adds a year to the buyers loyalty-tracker as well, which will give the buyer bonuses on further renting 
     */
     function extendContract() public onlyBuyer inState(State.EndOptions) {
         //Recompute weekly price
@@ -294,7 +294,10 @@ contract BilBoydDealership {
         state = State.Active;
     }
     
-    //Directly transfer to seller because the buyer already have the car
+    /*
+    * If the buyer wants to buy the car he is renting after the contract has expired    
+    * Directly transfer to seller because the buyer already has the car
+    */
     function buyCar() public onlyBuyer inState(State.EndOptions) payable {
         require(deposit+msg.value == buyerCar.buyPrice);
         seller.transfer(buyerCar.buyPrice);
@@ -302,7 +305,10 @@ contract BilBoydDealership {
         
     } 
     
-    // decrease value of car after years of use
+    /* 
+    * If the buyer wants to rent a new type of car. Loyalty points are still collected and applied to the new car-contract
+    * The buyer has to enter the information anew? 
+    */
     function newContract() public onlyBuyer inState(State.EndOptions) {
         loyaltyYears = loyaltyYears + 1;
         state = State.SetBuyer;
@@ -367,6 +373,8 @@ contract BilBoydDealership {
          return address(this).balance;
      }
     
+    //The buyer can see how much money the car he/she is renting is worth 
+    // (used by buyer to check amount if he/she wants to buy the car)
     function getBuyPriceForCurrentVehicle() public view returns(uint) {
         return buyerCar.buyPrice;
     }
