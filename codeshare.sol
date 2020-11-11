@@ -2,15 +2,9 @@ pragma solidity >=0.4.10 <0.8.0;
 
 //Navn på SetBuyer-state er endret til Claimed
 
-//TODO: HUSKER Å LEGGE TIL ONLYBUYER
-//TODO: Call initilalizeContract for something else.
-//TODO: Edit confirmWeeklyPurchase to change state after the correct amount of time (years), instead of after 20 seconds used for testing
-//TODO: should seller have to accept if the buyer wants to buy the car after rent? or just autmaticaly be bought?t
-//TODO: Fiks abortContract ferdig
-//TODO: check if person that initilalizeContract is not seller?? 
-//TODO: feilmelding hvis man sender feil depositum
-//TODO: lage function abort while in SetBuyer: legge inn en timestamp som avslutter kontrakten hvis det har gått for lang tid og da får seller tilbake penger
 
+//TODO: Edit confirmWeeklyPurchase to change state after the correct amount of time (years), instead of after 20 seconds used for testing
+//TODO: feilmelding hvis man sender feil depositum
 
 /* 
 * INSTRUCTIONS: 
