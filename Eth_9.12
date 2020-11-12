@@ -1,36 +1,48 @@
 pragma solidity >=0.4.10 <0.8.0;
 
-//Navn på SetBuyer-state er endret til Claimed
 
-//TODO: HUSKER Å LEGGE TIL ONLYBUYER
-//TODO: Call initilalizeContract for something else.
-//TODO: Edit confirmWeeklyPurchase to change state after the correct amount of time (years), instead of after 20 seconds used for testing
-//TODO: should seller have to accept if the buyer wants to buy the car after rent? or just autmaticaly be bought?t
-//TODO: Fiks abortContract ferdig
-//TODO: check if person that initilalizeContract is not seller?? 
-//TODO: feilmelding hvis man sender feil depositum
-//TODO: lage function abort while in SetBuyer: legge inn en timestamp som avslutter kontrakten hvis det har gått for lang tid og da får seller tilbake penger
-
-
-/* 
-* INSTRUCTIONS: 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 * Welcome to BilBoyd's smart contract car rental!
-
-This contract is made for the BilBoyd company for a renter that would like a long term car rental. 
-Thank you for choosing us as your car rental company of choice. 
-
-Please go through the following steps in order to rent a car from us, on the Blockschain!
-
-1. Claim the contract by pressing the InitializeContract-button. This will lock your address as the renter and can not be changed by anyone else after this step is complete.
-	 Do not worry, you have not commited to pay anything yet.
-
-2. Check which cars are currently available for rent by pressing the getVehicleChoices-button
-
-3. ...
-
----
-*/
-
+* INSTRUCTIONS: 
+* 
+* 
+* This contract is made for the BilBoyd company for a renter that would like a long term car rental. 
+* Thank you for choosing us as your car rental company of choice. 
+* 
+* Please go through the following steps in order to rent a car from us, on the Blockschain!
+* 
+* 1. Claim the contract by pressing the InitializeContract-button. This will lock your address as the renter and can not be changed by anyone else after this step is complete.
+* 	 Do not worry, you have not commited to pay anything yet.
+* 
+* 2. Check which cars are currently available for rent by pressing the getVehicleChoices-button
+* 
+* 3. Choose your car and type the name into setVehicleChoice
+* 
+* 4. Choose the values for the other attributes
+*     - setContractDuration
+*    - setExperience
+*     - setMilageCap
+*     
+* 5. Click calculateWeeklyPrice to figure out how much you need to pay
+* 
+* 6. Check the amount that you have to pay by clicking "weeklyPrice" and "deposit".
+*     - The amount you should pay the first time is weeklyPrice*2 + deposit
+*     
+* 7. To confirm the contract enter the amount calculated in step 6 into the value field and click "confirmInitialPurchase"
+*     - The contract has now been registered at the seller and the car is on the way to you
+* 
+* 8. When you receive your item, press "confirmReceived" you will be refunded one time the weeklyPrice, the other weeklyPrice-amount will go to the seller.
+*     - your deposit will still be locked in the contract. 
+* 
+* 9. Every week you will have to pay the weekly rent by inserting it into the value-field and press "confirmWeeklyPurchase".
+* 
+* 10. When the duration of the contract has expired, 4 options will be activated for you to choose from
+*     - terminateContract: This will terminate the contract and refund your deposit. The car should be returned
+*     - extendContract: This will extend the contract for 1 year, you will get a discount on your price for you loyalty.
+*     - buyCar: This wil buy the car. You should check the buy-price for the car with the button "getBuyPriceForCurrentVehicle" to check the price for buying the car.
+*     - newContract: This will initialize the a new contract where you can order a new car by setting the same parameters as in step 6. You will get a discount for your loyalty. 
+* 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
 contract BilBoydDealership {
@@ -155,7 +167,7 @@ contract BilBoydDealership {
     * After this no one else can change variables on the contract exept the buyer (and seller on its specific functions) 
     */
     function initialiseContract() public inState(State.Created) {
-      
+        require(msg.sender != seller, "As a seller you cannot be the buyer as well");
         emit Claimed();
         buyer = msg.sender;
         state = State.Claimed;
@@ -325,7 +337,7 @@ contract BilBoydDealership {
         //Recompute weekly price
         //Setstate to active with the new price
         loyaltyYears = loyaltyYears + 1;
-        experience= experience +1;
+        experience = experience +1;
         contractStart = getNow();
         weeklyPrice = calculateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
         state = State.Active;
@@ -353,9 +365,8 @@ contract BilBoydDealership {
         resetChoices();
         
     }
-    // driver will have 1 year more experience
    
-    
+   
     /*---------------------------------------
     * Define actions that will not be executed on the blockchain.
     * These methods only return data and does not demand any update on the blockchain
@@ -372,19 +383,10 @@ contract BilBoydDealership {
         return choice;
     }
     
-		
-    function getMilageCap() public view returns(string memory) {
-        if( milagecap > 0){
-            return uint2str(milagecap);
-        } else {
-            return "The milage cap must be between 300km and 500km";
-        }
-    }
-    
-    function getContractDuration() public view returns(uint) {
-        return duration;
-    }
-    
+ 
+    /*
+    * Get currently selected vehicle
+    */
     function getCurrentVehicle() public view returns(string memory){
         return string(abi.encodePacked(buyerCar.name));
     }
@@ -405,7 +407,6 @@ contract BilBoydDealership {
     }
     
     
-    
 
   	/*---------------------------------------
     * HELPER FUNCTIONS 
@@ -419,22 +420,6 @@ contract BilBoydDealership {
         uint256 des = block.timestamp;
         return des;
     }
-    
-  	/* 
-    * Sets test values for the buyer to make testing easier. Also initializes the contract and calulates the weekly price.
-    * TODO: Delete this method before delievry 
-    
-    function setTestValues() public returns(string memory des) {
-        initialiseContract();
-        loyaltyYears = 0;
-        experience = 6;
-        duration = 1;
-        milagecap = 300;
-        buyerCar = cars[1];
-        weeklyPrice = calculateRentalPrice(experience, buyerCar.price, milagecap, duration, loyaltyYears);
-      
-    }
-    */
     
     /*
     * This method contains the logic for calculating the rental price of a give car with parameters given by the buyer
@@ -528,3 +513,4 @@ contract BilBoydDealership {
     }
 
 }
+
