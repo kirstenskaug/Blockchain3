@@ -86,8 +86,8 @@ contract BilBoydDealership {
     ----------------------------------------*/
     
     constructor() public payable {
-        sellerDeposit = dollar2wei(250);
-        require(msg.value == sellerDeposit, "As a seller you have to deposit 6500000000000000000 wei");
+        sellerDeposit = 250;
+        require(msg.value == sellerDeposit, "As a seller you have to deposit 250");
         cars.push(Mini);
         cars.push(SUV);
         cars.push(Pickup);
@@ -526,6 +526,5 @@ contract BilBoydDealership {
         deposit=0;
         buyerCar.name="Not car selected";
     }
-    
-   
+
 }
